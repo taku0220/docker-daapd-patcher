@@ -5,6 +5,7 @@ ARG DAAPD_RELEASE
 ARG ARCHBITS
 ENV ENABLE64BIT="disable"
 
+COPY patch/ /tmp/source/
 RUN \
  echo "**** install build packages ****" && \
  apk add --no-cache \
@@ -93,6 +94,7 @@ RUN \
  tar xf /tmp/source/forked.tar.gz -C \
 	/tmp/source/forked-daapd --strip-components=1 && \
  cd /tmp/source/forked-daapd && \
+ find /tmp/source -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
  autoreconf -i -v && \
  ./configure \
 	--build=$CBUILD \
