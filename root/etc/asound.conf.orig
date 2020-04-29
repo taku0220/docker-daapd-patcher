@@ -10,3 +10,21 @@ ctl.usb-dac {
     type hw;
     card 0;
 }
+
+pcm.plugequal {
+    type equal;
+    # for USB-DAC
+    slave.pcm usb-dac;
+    controls "/config/alsa/alsaequal/alsaequal_usbdac.bin";
+}
+
+ctl.equal {
+    type equal;
+    # for USB-DAC
+    controls "/config/alsa/alsaequal/alsaequal_usbdac.bin";
+}
+
+pcm.equal {
+    type plug;
+    slave.pcm plugequal;
+}

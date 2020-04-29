@@ -1,0 +1,54 @@
+/*
+        basics.h
+
+        Copyright 2004-12 Tim Goetze <tim@quitte.de>
+
+        http://quitte.de/dsp/
+
+        Common constants, typedefs, utility functions
+        and simplified LADSPA #defines.
+
+*/
+/*
+        This program is free software; you can redistribute it and/or
+        modify it under the terms of the GNU General Public License
+        as published by the Free Software Foundation; either version 3
+        of the License, or (at your option) any later version.
+
+        This program is distributed in the hope that it will be useful,
+        but WITHOUT ANY WARRANTY; without even the implied warranty of
+        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+        GNU General Public License for more details.
+
+        You should have received a copy of the GNU General Public License
+        along with this program; if not, write to the Free Software
+        Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+        02111-1307, USA or point your web browser to http://www.gnu.org.
+*/
+
+
+--- caps_orig/basics.h
++++ caps/basics.h
+@@ -49,14 +49,14 @@
+ 
+ #include "ladspa.h"
+ 
+-typedef __int8_t			int8;
+-typedef __uint8_t			uint8;
+-typedef __int16_t			int16;
+-typedef __uint16_t		uint16;
+-typedef __int32_t			int32;
+-typedef __uint32_t		uint32;
+-typedef __int64_t			int64;
+-typedef __uint64_t		uint64;
++typedef __INT8_TYPE__			int8;
++typedef __UINT8_TYPE__			uint8;
++typedef __INT16_TYPE__			int16;
++typedef __UINT16_TYPE__		uint16;
++typedef __INT32_TYPE__			int32;
++typedef __UINT32_TYPE__		uint32;
++typedef __INT64_TYPE__			int64;
++typedef __UINT64_TYPE__		uint64;
+ 
+ #define MIN_GAIN 1e-6 /* -120 dB */
+ /* smallest non-denormal 32 bit IEEE float is 1.18e-38 */

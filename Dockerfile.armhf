@@ -11,6 +11,7 @@ RUN \
  echo "**** install build packages ****" && \
  apk add --no-cache \
 	alsa-lib-dev \
+	alsa-plugins \
 	autoconf \
 	automake \
 	avahi-dev \
@@ -38,19 +39,27 @@ RUN \
 	libtool \
 	libunistring-dev \
 	libwebsockets-dev \
+	linux-headers \
 	make \
 	openjdk8-jre-base \
 	protobuf-c-dev \
+	python3 \
 	sqlite-dev \
 	taglib-dev \
 	tar && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/v3.9/community \
+	ladspa \
+	ladspa-dev && \
  apk add --no-cache \
 	--repository http://nl.alpinelinux.org/alpine/edge/testing \
 	mxml-dev && \
  \
  mkdir -p \
-	/tmp/source/forked-daapd \
-	/tmp/source/libantlr3c && \
+	/tmp/source/caps \
+	/tmp/source/alsaequal \
+	/tmp/source/libantlr3c \
+	/tmp/source/forked-daapd && \
  export PATH="/tmp/source:$PATH" && \
  ARCHBITS=${ARCHBITS:-$(getconf LONG_BIT 2>/dev/null)} && \
  DAAPD_RELEASE=${DAAPD_RELEASE:-$(curl -sX GET "https://api.github.com/repos/ejurgensen/forked-daapd/releases/latest" \
@@ -58,6 +67,33 @@ RUN \
  if [ "${ARCHBITS}" = "64" ]; then \
 	ENABLE64BIT="enable"; \
  fi && \
+ \
+ echo "**** compile and install caps ****" && \
+ if [ ! -f /tmp/source/caps.tar.bz2 ]; then \
+	curl -o \
+	/tmp/source/caps.tar.bz2 -L \
+		"http://quitte.de/dsp/caps_0.9.26.tar.bz2"; \
+ fi && \
+ tar xfj /tmp/source/caps.tar.bz2 -C \
+	/tmp/source/caps --strip-components=1 && \
+ cd /tmp/source/caps && \
+ find /tmp/source/caps_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ python3 configure.py && \
+ make && \
+ make DESTDIR=/tmp/caps-build install && \
+ \
+ echo "**** compile and install alsaequal ****" && \
+ if [ ! -f /tmp/source/alsaequal.tar.bz2 ]; then \
+	curl -o \
+	/tmp/source/alsaequal.tar.bz2 -L \
+		"https://thedigitalmachine.net/tools/alsaequal-0.6.tar.bz2"; \
+ fi && \
+ tar xfj /tmp/source/alsaequal.tar.bz2 -C \
+	/tmp/source/alsaequal --strip-components=1 && \
+ cd /tmp/source/alsaequal && \
+ find /tmp/source/alsaequal_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ make && \
+ make DESTDIR=/tmp/alsaequal-build install && \
  \
  echo "**** make antlr wrapper ****" && \
  echo \
@@ -103,7 +139,7 @@ RUN \
  tar xf /tmp/source/forked.tar.gz -C \
 	/tmp/source/forked-daapd --strip-components=1 && \
  cd /tmp/source/forked-daapd && \
- find /tmp/source -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ find /tmp/source/forked-daapd_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
  autoreconf -i -v && \
  ./configure \
 	--build=$CBUILD \
@@ -133,6 +169,7 @@ RUN \
  echo "**** install runtime packages ****" && \
  apk add --no-cache \
 	alsa-utils \
+	alsa-plugins \
 	avahi \
 	confuse \
 	dbus \
@@ -147,8 +184,12 @@ RUN \
 	libunistring \
 	libwebsockets \
 	protobuf-c \
+	python3 \
 	sqlite \
 	sqlite-libs && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/v3.9/community \
+	ladspa && \
  apk add --no-cache \
 	--repository http://nl.alpinelinux.org/alpine/edge/testing \
 	mxml && \
@@ -158,7 +199,7 @@ RUN \
  sed -i -e "s/^#deny-interfaces=eth1/deny-interfaces=docker0, lxcbr0/" /etc/avahi/avahi-daemon.conf && \
  \
  echo "**** remove avahi service files ****" && \
- rm /etc/avahi/services/*.service
+ rm /etc/avahi/services/*.service && \
  \
  echo "**** add audio group ****" && \
  usermod -aG audio abc && \
@@ -166,6 +207,8 @@ RUN \
 # copy buildstage and local files
 COPY --from=buildstage /tmp/daapd-build/ /
 COPY --from=buildstage /usr/lib/libantlr3c.so /usr/lib/libantlr3c.so
+COPY --from=buildstage /tmp/caps-build/ /
+COPY --from=buildstage /tmp/alsaequal-build/ /
 COPY root/ /
 
 # ports and volumes

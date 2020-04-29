@@ -2,6 +2,7 @@
 
 ## make folders#
 mkdir -p /config/alsa \
+	/config/alsa/alsaequal \
 
 ## alsa ##
 # configure defaults copy of conf
