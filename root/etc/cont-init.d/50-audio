@@ -1,8 +1,9 @@
 #!/usr/bin/with-contenv bash
 
-## make folders#
+## make folders ##
 mkdir -p /config/alsa \
 	/config/alsa/alsaequal \
+	/config/bluetooth
 
 ## alsa ##
 # configure defaults copy of conf
@@ -17,6 +18,13 @@ fi
 	rm /etc/asound.conf
 [[ ! -L /etc/asound.conf ]] && \
 	ln -s /config/alsa/asound.conf /etc/asound.conf
+
+## Bluetooth ##
+# symlink conf dir to /conf dir
+[[ ! -L /var/lib/bluetooth && -d /var/lib/bluetooth ]] && \
+	rm -r /var/lib/bluetooth
+[[ ! -L /var/lib/bluetooth ]] && \
+	ln -s /config/bluetooth /var/lib/bluetooth
 
 ## permissions ##
 if [ -d /dev/snd ]; then

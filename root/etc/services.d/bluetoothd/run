@@ -1,0 +1,12 @@
+#!/usr/bin/with-contenv bash
+
+PS_RET=1
+until [[ $PS_RET -eq 0 ]]; do
+  sleep 1s
+  ps | egrep -v grep | grep "dbus-daemon" > /dev/null
+  PS_RET=$?
+done
+
+echo "Start service: bluetoothd"
+exec \
+	/usr/lib/bluetooth/bluetoothd2 --plugin=a2dp,avrcp,autopair,scanparam,deviceinfo,battery --compat

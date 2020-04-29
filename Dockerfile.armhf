@@ -171,6 +171,7 @@ RUN \
 	alsa-utils \
 	alsa-plugins \
 	avahi \
+	bluez \
 	confuse \
 	dbus \
 	ffmpeg \
@@ -192,6 +193,8 @@ RUN \
 	ladspa && \
  apk add --no-cache \
 	--repository http://nl.alpinelinux.org/alpine/edge/testing \
+	--repository http://nl.alpinelinux.org/alpine/edge/community \
+	bluez-alsa \
 	mxml && \
  \
  echo "**** configuration changes avahi-daemon ****" && \
@@ -203,6 +206,13 @@ RUN \
  \
  echo "**** add audio group ****" && \
  usermod -aG audio abc && \
+ \
+ echo "**** remove default udev rules ****" && \
+ find /lib/udev/rules.d -type f -name "*.rules" -exec basename {} \; | \
+	xargs -I{} /bin/ln -s /dev/null /etc/udev/rules.d/{} && \
+ \
+ echo "**** QNAP dropped the bluetoothd process ****" && \
+ ln -s bluetoothd /usr/lib/bluetooth/bluetoothd2
 
 # copy buildstage and local files
 COPY --from=buildstage /tmp/daapd-build/ /
