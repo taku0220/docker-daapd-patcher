@@ -141,7 +141,14 @@ RUN \
 	sqlite-libs && \
  apk add --no-cache \
 	--repository http://nl.alpinelinux.org/alpine/edge/testing \
-	mxml
+	mxml && \
+ \
+ echo "**** configuration changes avahi-daemon ****" && \
+ sed -i -e "s/^use-ipv6=yes/use-ipv6=no/" /etc/avahi/avahi-daemon.conf && \
+ sed -i -e "s/^#deny-interfaces=eth1/deny-interfaces=docker0, lxcbr0/" /etc/avahi/avahi-daemon.conf && \
+ \
+ echo "**** remove avahi service files ****" && \
+ rm /etc/avahi/services/*.service
 
 # copy buildstage and local files
 COPY --from=buildstage /tmp/daapd-build/ /
