@@ -132,6 +132,7 @@ LABEL maintainer="taku0220"
 RUN \
  echo "**** install runtime packages ****" && \
  apk add --no-cache \
+	alsa-utils \
 	avahi \
 	confuse \
 	dbus \
@@ -158,6 +159,9 @@ RUN \
  \
  echo "**** remove avahi service files ****" && \
  rm /etc/avahi/services/*.service
+ \
+ echo "**** add audio group ****" && \
+ usermod -aG audio abc && \
 
 # copy buildstage and local files
 COPY --from=buildstage /tmp/daapd-build/ /

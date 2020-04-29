@@ -1,0 +1,25 @@
+#!/usr/bin/with-contenv bash
+
+## make folders#
+mkdir -p /config/alsa \
+
+## alsa ##
+# configure defaults copy of conf
+if [ ! -e "/defaults/asound.conf" ]; then
+  cp /etc/asound.conf.orig /defaults/asound.conf
+fi
+
+# symlink conf to /conf
+[[ ! -f /config/alsa/asound.conf ]] && \
+	cp /defaults/asound.conf /config/alsa/asound.conf
+[[ ! -L /etc/asound.conf && -f /etc/asound.conf ]] && \
+	rm /etc/asound.conf
+[[ ! -L /etc/asound.conf ]] && \
+	ln -s /config/alsa/asound.conf /etc/asound.conf
+
+## permissions ##
+if [ -d /dev/snd ]; then
+  chmod 0766 /dev/snd/*
+fi
+
+chown -R abc:abc /config

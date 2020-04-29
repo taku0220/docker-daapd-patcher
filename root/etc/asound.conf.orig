@@ -1,0 +1,12 @@
+pcm.usb-dac {
+    type plug;
+    slave.pcm {
+      type hw;
+      card 0;
+    }
+}
+
+ctl.usb-dac {
+    type hw;
+    card 0;
+}
