@@ -58,6 +58,7 @@ RUN \
  mkdir -p \
 	/tmp/source/caps \
 	/tmp/source/alsaequal \
+	/tmp/source/amixer-webui \
 	/tmp/source/libantlr3c \
 	/tmp/source/forked-daapd && \
  export PATH="/tmp/source:$PATH" && \
@@ -94,6 +95,17 @@ RUN \
  find /tmp/source/alsaequal_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
  make && \
  make DESTDIR=/tmp/alsaequal-build install && \
+ \
+ echo "**** install amixer-webui ****" && \
+ if [ ! -f /tmp/source/amixer-webui.tar.gz ]; then \
+	curl -o \
+	/tmp/source/amixer-webui.tar.gz -L \
+		"https://github.com/JiriSko/amixer-webui/archive/master.tar.gz"; \
+ fi && \
+ tar xf /tmp/source/amixer-webui.tar.gz -C \
+	/tmp/source/amixer-webui --strip-components=1 && \
+ cd /tmp/source/amixer-webui && \
+ /tmp/source/amixer-webui_install.sh && \
  \
  echo "**** make antlr wrapper ****" && \
  echo \
@@ -212,13 +224,18 @@ RUN \
 	xargs -I{} /bin/ln -s /dev/null /etc/udev/rules.d/{} && \
  \
  echo "**** QNAP dropped the bluetoothd process ****" && \
- ln -s bluetoothd /usr/lib/bluetooth/bluetoothd2
+ ln -s bluetoothd /usr/lib/bluetooth/bluetoothd2 && \
+ \
+ echo "**** install Flask ****" && \
+ pip3 install --upgrade pip && \
+ pip3 install Flask
 
 # copy buildstage and local files
 COPY --from=buildstage /tmp/daapd-build/ /
 COPY --from=buildstage /usr/lib/libantlr3c.so /usr/lib/libantlr3c.so
 COPY --from=buildstage /tmp/caps-build/ /
 COPY --from=buildstage /tmp/alsaequal-build/ /
+COPY --from=buildstage /tmp/amixer-webui-build/ /
 COPY root/ /
 
 # ports and volumes

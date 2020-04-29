@@ -26,6 +26,20 @@ fi
 [[ ! -L /var/lib/bluetooth ]] && \
 	ln -s /config/bluetooth /var/lib/bluetooth
 
+## amixer-webui ##
+# configure defaults copy of conf
+if [ ! -e "/defaults/amixer-webui.conf" ]; then
+  cp /etc/amixer-webui.conf.orig /defaults/amixer-webui.conf
+fi
+
+# symlink conf to /conf
+[[ ! -f /config/alsa/amixer-webui/amixer-webui.conf ]] && \
+	cp /defaults/amixer-webui.conf /config/alsa/amixer-webui.conf
+[[ ! -L /etc/amixer-webui.conf && -f /etc/amixer-webui.conf ]] && \
+	rm /etc/amixer-webui.conf
+[[ ! -L /etc/amixer-webui.conf ]] && \
+	ln -s /config/alsa/amixer-webui.conf /etc/amixer-webui.conf
+
 ## permissions ##
 if [ -d /dev/snd ]; then
   chmod 0766 /dev/snd/*
