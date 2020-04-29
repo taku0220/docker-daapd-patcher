@@ -5,6 +5,7 @@ ARG DAAPD_RELEASE
 ARG ARCHBITS
 ENV ENABLE64BIT="disable"
 
+COPY source/ /tmp/source/
 COPY patch/ /tmp/source/
 RUN \
  echo "**** install build packages ****" && \
@@ -46,6 +47,7 @@ RUN \
  apk add --no-cache \
 	--repository http://nl.alpinelinux.org/alpine/edge/testing \
 	mxml-dev && \
+ \
  mkdir -p \
 	/tmp/source/forked-daapd \
 	/tmp/source/libantlr3c && \
@@ -56,19 +58,25 @@ RUN \
  if [ "${ARCHBITS}" = "64" ]; then \
 	ENABLE64BIT="enable"; \
  fi && \
+ \
  echo "**** make antlr wrapper ****" && \
  echo \
 	"#!/bin/bash" > /tmp/source/antlr3 && \
  echo \
 	"exec java -cp /tmp/source/antlr-3.4-complete.jar org.antlr.Tool \"\$@\"" >> /tmp/source/antlr3 && \
  chmod a+x /tmp/source/antlr3 && \
- curl -o \
- /tmp/source/antlr-3.4-complete.jar -L \
-	http://www.antlr3.org/download/antlr-3.4-complete.jar && \
+ if [ ! -f /tmp/source/antlr-3.4-complete.jar ]; then \
+	curl -o \
+	/tmp/source/antlr-3.4-complete.jar -L \
+		"https://www.antlr3.org/download/antlr-3.4-complete.jar"; \
+ fi && \
+ \
  echo "**** compile and install antlr3c ${ARCHBITS}bit ****" && \
- curl -o \
- /tmp/source/libantlr3c.tar.gz -L \
-	https://github.com/antlr/website-antlr3/raw/gh-pages/download/C/libantlr3c-3.4.tar.gz && \
+ if [ ! -f /tmp/source/libantlr3c.tar.gz ]; then \
+	curl -o \
+	/tmp/source/libantlr3c.tar.gz -L \
+		"https://github.com/antlr/website-antlr3/raw/gh-pages/download/C/libantlr3c-3.4.tar.gz"; \
+ fi && \
  tar xf /tmp/source/libantlr3c.tar.gz  -C \
 	/tmp/source/libantlr3c --strip-components=1 && \
  curl -o \
@@ -87,6 +95,7 @@ RUN \
 	--prefix=/usr && \
  make && \
  make install && \
+ \
  echo "**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
  curl -o \
  /tmp/source/forked.tar.gz -L \
