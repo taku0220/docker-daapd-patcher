@@ -45,4 +45,6 @@ if [ -d /dev/snd ]; then
   chmod 0766 /dev/snd/*
 fi
 
+chmod u+x /etc/bt_powerscan/bt_powerscan.sh
+
 chown -R abc:abc /config
