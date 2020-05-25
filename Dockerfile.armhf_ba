@@ -1,0 +1,283 @@
+FROM lsiobase/alpine:arm32v7-3.11 as buildstage
+############## build stage ##############
+
+ARG DAAPD_RELEASE
+ARG ARCHBITS
+ENV ENABLE64BIT="disable"
+
+COPY source/ /tmp/source/
+COPY patch/ /tmp/source/
+RUN \
+ echo "**** install build packages ****" && \
+ apk add --no-cache \
+	alsa-lib-dev \
+	alsa-plugins \
+	autoconf \
+	automake \
+	avahi-dev \
+	bash \
+	bluez-dev \
+	bsd-compat-headers \
+	confuse-dev \
+	curl \
+	curl-dev \
+	dbus-dev \
+	ffmpeg-dev \
+	file \
+	flac-dev \
+	g++ \
+	gcc \
+	gettext-dev \
+	glib-dev \
+	gnutls-dev \
+	gperf \
+	json-c-dev \
+	libcurl \
+	libevent-dev \
+	libgcrypt-dev \
+	libogg-dev \
+	libplist-dev \
+	libressl-dev \
+	libsodium-dev \
+	libtool \
+	libunistring-dev \
+	libwebsockets-dev \
+	linux-headers \
+	make \
+	musl-dev \
+	openjdk8-jre-base \
+	protobuf-c-dev \
+	python3 \
+	readline-dev \
+	sbc-dev \
+	sqlite-dev \
+	taglib-dev \
+	tar && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/v3.9/community \
+	ladspa \
+	ladspa-dev && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/edge/community \
+	fdk-aac-dev && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/edge/testing \
+	mxml-dev && \
+ \
+ mkdir -p \
+	/tmp/source/caps \
+	/tmp/source/alsaequal \
+	/tmp/source/amixer-webui \
+	/tmp/source/bluez-alsa \
+	/tmp/source/libantlr3c \
+	/tmp/source/forked-daapd && \
+ export PATH="/tmp/source:$PATH" && \
+ ARCHBITS=${ARCHBITS:-$(getconf LONG_BIT 2>/dev/null)} && \
+ DAAPD_RELEASE=${DAAPD_RELEASE:-$(curl -sX GET "https://api.github.com/repos/ejurgensen/forked-daapd/releases/latest" \
+	| awk '/tag_name/{print $4;exit}' FS='[""]')} && \
+ if [ "${ARCHBITS}" = "64" ]; then \
+	ENABLE64BIT="enable"; \
+ fi && \
+ \
+ echo "**** compile and install caps ****" && \
+ if [ ! -f /tmp/source/caps.tar.bz2 ]; then \
+	curl -o \
+	/tmp/source/caps.tar.bz2 -L \
+		"http://quitte.de/dsp/caps_0.9.26.tar.bz2"; \
+ fi && \
+ tar xfj /tmp/source/caps.tar.bz2 -C \
+	/tmp/source/caps --strip-components=1 && \
+ cd /tmp/source/caps && \
+ find /tmp/source/caps_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ python3 configure.py && \
+ make && \
+ make DESTDIR=/tmp/caps-build install && \
+ \
+ echo "**** compile and install alsaequal ****" && \
+ if [ ! -f /tmp/source/alsaequal.tar.bz2 ]; then \
+	curl -o \
+	/tmp/source/alsaequal.tar.bz2 -L \
+		"https://thedigitalmachine.net/tools/alsaequal-0.6.tar.bz2"; \
+ fi && \
+ tar xfj /tmp/source/alsaequal.tar.bz2 -C \
+	/tmp/source/alsaequal --strip-components=1 && \
+ cd /tmp/source/alsaequal && \
+ find /tmp/source/alsaequal_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ make && \
+ make DESTDIR=/tmp/alsaequal-build install && \
+ \
+ echo "**** install amixer-webui ****" && \
+ if [ ! -f /tmp/source/amixer-webui.tar.gz ]; then \
+	curl -o \
+	/tmp/source/amixer-webui.tar.gz -L \
+		"https://github.com/JiriSko/amixer-webui/archive/master.tar.gz"; \
+ fi && \
+ tar xf /tmp/source/amixer-webui.tar.gz -C \
+	/tmp/source/amixer-webui --strip-components=1 && \
+ cd /tmp/source/amixer-webui && \
+ chmod a+x /tmp/source/amixer-webui_install.sh && \
+ /tmp/source/amixer-webui_install.sh && \
+ \
+ echo "**** compile and install bluez-alsa ****" && \
+ curl -o \
+ /tmp/source/bluez-alsa.tar.gz -L \
+	"https://github.com/Arkq/bluez-alsa/archive/master.tar.gz" && \
+ tar xf /tmp/source/bluez-alsa.tar.gz  -C \
+	/tmp/source/bluez-alsa --strip-components=1 && \
+ cd /tmp/source/bluez-alsa && \
+ autoreconf --install && \
+ mkdir -p /tmp/source/bluez-alsa/build && \
+ cd /tmp/source/bluez-alsa/build && \
+ ../configure \
+	--build=$CBUILD \
+	--enable-aac \
+	--enable-msbc \
+	--enable-upower \
+	--enable-rfcomm \
+	--enable-debug \
+	--disable-static \
+	--prefix=/usr \
+	--sysconfdir=/etc && \
+ make && \
+ make DESTDIR=/tmp/bluez-alsa-build install && \
+ \
+ echo "**** make antlr wrapper ****" && \
+ echo \
+	"#!/bin/bash" > /tmp/source/antlr3 && \
+ echo \
+	"exec java -cp /tmp/source/antlr-3.4-complete.jar org.antlr.Tool \"\$@\"" >> /tmp/source/antlr3 && \
+ chmod a+x /tmp/source/antlr3 && \
+ if [ ! -f /tmp/source/antlr-3.4-complete.jar ]; then \
+	curl -o \
+	/tmp/source/antlr-3.4-complete.jar -L \
+		"https://www.antlr3.org/download/antlr-3.4-complete.jar"; \
+ fi && \
+ \
+ echo "**** compile and install antlr3c ${ARCHBITS}bit ****" && \
+ if [ ! -f /tmp/source/libantlr3c.tar.gz ]; then \
+	curl -o \
+	/tmp/source/libantlr3c.tar.gz -L \
+		"https://github.com/antlr/website-antlr3/raw/gh-pages/download/C/libantlr3c-3.4.tar.gz"; \
+ fi && \
+ tar xf /tmp/source/libantlr3c.tar.gz  -C \
+	/tmp/source/libantlr3c --strip-components=1 && \
+ curl -o \
+ /tmp/source/libantlr3c/config.guess -L \
+	'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' && \
+ chmod a+x /tmp/source/libantlr3c/config.guess && \
+ curl -o \
+ /tmp/source/libantlr3c/config.sub -L \
+	'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD' && \
+ chmod a+x /tmp/source/libantlr3c/config.sub && \
+ cd /tmp/source/libantlr3c && \
+ ./configure \
+	--build=$CBUILD \
+	--${ENABLE64BIT}-64bit \
+	--disable-abiflags \
+	--prefix=/usr && \
+ make && \
+ make install && \
+ \
+ echo "**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
+ curl -o \
+ /tmp/source/forked.tar.gz -L \
+	"https://github.com/ejurgensen/forked-daapd/archive/${DAAPD_RELEASE}.tar.gz" && \
+ tar xf /tmp/source/forked.tar.gz -C \
+	/tmp/source/forked-daapd --strip-components=1 && \
+ cd /tmp/source/forked-daapd && \
+ find /tmp/source/forked-daapd_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ autoreconf -i -v && \
+ ./configure \
+	--build=$CBUILD \
+	--enable-chromecast \
+	--enable-itunes \
+	--enable-lastfm \
+	--enable-mpd \
+	--host=$CHOST \
+	--infodir=/usr/share/info \
+	--localstatedir=/var \
+	--mandir=/usr/share/man \
+	--prefix=/usr \
+	--sysconfdir=/etc && \
+ make && \
+ make DESTDIR=/tmp/daapd-build install && \
+ mv /tmp/daapd-build/etc/forked-daapd.conf /tmp/daapd-build/etc/forked-daapd.conf.orig
+############## runtime stage ##############
+FROM lsiobase/alpine:arm32v7-3.11
+
+# set version label
+ARG BUILD_DATE
+ARG VERSION="1.0"
+LABEL build_version="docker-daapd-patcher version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL maintainer="taku0220"
+
+RUN \
+ echo "**** install runtime packages ****" && \
+ apk add --no-cache \
+	alsa-utils \
+	alsa-plugins \
+	avahi \
+	bluez \
+	bluez-btmon \
+	bluez-libs \
+	confuse \
+	curl \
+	dbus \
+	ffmpeg \
+	json-c \
+	libcurl \
+	libevent \
+	libgcrypt \
+	libplist \
+	libressl \
+	libsodium \
+	libunistring \
+	libwebsockets \
+	protobuf-c \
+	python3 \
+	sbc \
+	sqlite \
+	sqlite-libs && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/v3.9/community \
+	ladspa && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/edge/community \
+	fdk-aac && \
+ apk add --no-cache \
+	--repository http://nl.alpinelinux.org/alpine/edge/testing \
+	mxml && \
+ \
+ echo "**** configuration changes avahi-daemon ****" && \
+ sed -i -e "s/^use-ipv6=yes/use-ipv6=no/" /etc/avahi/avahi-daemon.conf && \
+ sed -i -e "s/^#deny-interfaces=eth1/deny-interfaces=docker0, lxcbr0/" /etc/avahi/avahi-daemon.conf && \
+ \
+ echo "**** remove avahi service files ****" && \
+ rm /etc/avahi/services/*.service && \
+ \
+ echo "**** add audio group ****" && \
+ usermod -aG audio abc && \
+ \
+ echo "**** remove default udev rules ****" && \
+ find /lib/udev/rules.d -type f -name "*.rules" -exec basename {} \; | \
+	xargs -I{} /bin/ln -s /dev/null /etc/udev/rules.d/{} && \
+ \
+ echo "**** QNAP dropped the bluetoothd process ****" && \
+ ln -s bluetoothd /usr/lib/bluetooth/bluetoothd2 && \
+ \
+ echo "**** install Flask ****" && \
+ pip3 install --upgrade pip && \
+ pip3 install Flask
+
+# copy buildstage and local files
+COPY --from=buildstage /tmp/daapd-build/ /
+COPY --from=buildstage /usr/lib/libantlr3c.so /usr/lib/libantlr3c.so
+COPY --from=buildstage /tmp/caps-build/ /
+COPY --from=buildstage /tmp/alsaequal-build/ /
+COPY --from=buildstage /tmp/amixer-webui-build/ /
+COPY --from=buildstage /tmp/bluez-alsa-build/ /
+COPY root/ /
+
+# ports and volumes
+EXPOSE 3689
+VOLUME /config /music
