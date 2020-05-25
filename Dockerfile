@@ -105,6 +105,7 @@ RUN \
  tar xf /tmp/source/amixer-webui.tar.gz -C \
 	/tmp/source/amixer-webui --strip-components=1 && \
  cd /tmp/source/amixer-webui && \
+ chmod a+x /tmp/source/amixer-webui_install.sh && \
  /tmp/source/amixer-webui_install.sh && \
  \
  echo "**** make antlr wrapper ****" && \
@@ -184,7 +185,9 @@ RUN \
 	alsa-plugins \
 	avahi \
 	bluez \
+	bluez-btmon \
 	confuse \
+	curl \
 	dbus \
 	ffmpeg \
 	json-c \

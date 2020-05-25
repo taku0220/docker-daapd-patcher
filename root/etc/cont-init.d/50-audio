@@ -46,5 +46,6 @@ if [ -d /dev/snd ]; then
 fi
 
 chmod u+x /etc/bt_powerscan/bt_powerscan.sh
+chmod u+x /etc/bt_multimedia_button/bt_multimedia_button.sh
 
 chown -R abc:abc /config
