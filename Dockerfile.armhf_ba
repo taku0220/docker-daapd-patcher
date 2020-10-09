@@ -54,14 +54,10 @@ RUN \
 	taglib-dev \
 	tar && \
  apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/v3.9/community \
-	ladspa \
-	ladspa-dev && \
- apk add --no-cache \
 	--repository http://nl.alpinelinux.org/alpine/edge/community \
-	fdk-aac-dev && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/testing \
+	fdk-aac-dev \
+	ladspa \
+	ladspa-dev \
 	mxml-dev && \
  \
  mkdir -p \
@@ -239,13 +235,9 @@ RUN \
 	sqlite \
 	sqlite-libs && \
  apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/v3.9/community \
-	ladspa && \
- apk add --no-cache \
 	--repository http://nl.alpinelinux.org/alpine/edge/community \
-	fdk-aac && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/testing \
+	fdk-aac \
+	ladspa \
 	mxml && \
  \
  echo "**** configuration changes avahi-daemon ****" && \
