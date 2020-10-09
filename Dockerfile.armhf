@@ -44,7 +44,7 @@ RUN \
 	taglib-dev \
 	tar && \
  apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/testing \
+	--repository http://nl.alpinelinux.org/alpine/edge/community \
 	mxml-dev && \
  mkdir -p \
 	/tmp/source/forked-daapd \
@@ -140,7 +140,7 @@ RUN \
 	sqlite \
 	sqlite-libs && \
  apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/testing \
+	--repository http://nl.alpinelinux.org/alpine/edge/community \
 	mxml
 
 # copy buildstage and local files
