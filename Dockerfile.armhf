@@ -1,4 +1,4 @@
-FROM lsiobase/alpine:arm32v7-3.11 as buildstage
+FROM ghcr.io/linuxserver/baseimage-alpine:arm32v7-3.12  as buildstage
 ############## build stage ##############
 
 ARG DAAPD_RELEASE
@@ -39,6 +39,7 @@ RUN \
 	libwebsockets-dev \
 	make \
 	openjdk8-jre-base \
+	patch \
 	protobuf-c-dev \
 	sqlite-dev \
 	taglib-dev \
@@ -56,7 +57,8 @@ RUN \
  if [ "${ARCHBITS}" = "64" ]; then \
 	ENABLE64BIT="enable"; \
  fi && \
- echo "**** make antlr wrapper ****" && \
+\
+ echo -e "\n**** make antlr wrapper ****" && \
  echo \
 	"#!/bin/bash" > /tmp/source/antlr3 && \
  echo \
@@ -65,7 +67,8 @@ RUN \
  curl -o \
  /tmp/source/antlr-3.4-complete.jar -L \
 	http://www.antlr3.org/download/antlr-3.4-complete.jar && \
- echo "**** compile and install antlr3c ${ARCHBITS}bit ****" && \
+\
+ echo -e "\n**** compile and install antlr3c ${ARCHBITS}bit ****" && \
  curl -o \
  /tmp/source/libantlr3c.tar.gz -L \
 	https://github.com/antlr/website-antlr3/raw/gh-pages/download/C/libantlr3c-3.4.tar.gz && \
@@ -87,6 +90,7 @@ RUN \
 	--prefix=/usr && \
  make && \
  make install && \
+\
  echo "**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
  curl -o \
  /tmp/source/forked.tar.gz -L \
@@ -99,7 +103,6 @@ RUN \
  ./configure \
 	--build=$CBUILD \
 	--enable-chromecast \
-	--enable-itunes \
 	--enable-lastfm \
 	--enable-mpd \
 	--host=$CHOST \
@@ -112,7 +115,7 @@ RUN \
  make DESTDIR=/tmp/daapd-build install && \
  mv /tmp/daapd-build/etc/forked-daapd.conf /tmp/daapd-build/etc/forked-daapd.conf.orig
 ############## runtime stage ##############
-FROM lsiobase/alpine:arm32v7-3.11
+FROM ghcr.io/linuxserver/baseimage-alpine:arm32v7-3.12
 
 # set version label
 ARG BUILD_DATE
@@ -121,7 +124,9 @@ LABEL build_version="docker-daapd-patcher version:- ${VERSION} Build-date:- ${BU
 LABEL maintainer="taku0220"
 
 RUN \
- echo "**** install runtime packages ****" && \
+ echo -e "\n**** install runtime packages ****" && \
+ apk update && \
+ apk upgrade && \
  apk add --no-cache \
 	avahi \
 	confuse \
