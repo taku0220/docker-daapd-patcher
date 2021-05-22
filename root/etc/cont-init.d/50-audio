@@ -3,7 +3,8 @@
 ## make folders ##
 mkdir -p /config/alsa \
 	/config/alsa/alsaequal \
-	/config/bluetooth
+	/config/bluetooth \
+	/config/bluetooth/bt_volume
 
 ## alsa ##
 # configure defaults copy of conf
@@ -19,12 +20,14 @@ fi
 [[ ! -L /etc/asound.conf ]] && \
 	ln -s /config/alsa/asound.conf /etc/asound.conf
 
+
 ## Bluetooth ##
 # symlink conf dir to /conf dir
 [[ ! -L /var/lib/bluetooth && -d /var/lib/bluetooth ]] && \
 	rm -r /var/lib/bluetooth
 [[ ! -L /var/lib/bluetooth ]] && \
 	ln -s /config/bluetooth /var/lib/bluetooth
+
 
 ## amixer-webui ##
 # configure defaults copy of conf
@@ -40,6 +43,22 @@ fi
 [[ ! -L /etc/amixer-webui.conf ]] && \
 	ln -s /config/alsa/amixer-webui.conf /etc/amixer-webui.conf
 
+
+## bt_volume ##
+# configure defaults copy of conf
+if [ ! -e "/defaults/bt_volume_conf.py" ]; then
+  cp /etc/bt_volume_conf.py.orig /defaults/bt_volume_conf.py
+fi
+
+# symlink conf to /conf
+[[ ! -f /config/bluetooth/bt_volume/bt_volume_conf.py ]] && \
+	cp /defaults/bt_volume_conf.py /config/bluetooth/bt_volume/bt_volume_conf.py
+[[ ! -L /etc/bt_volume/bt_volume_conf.py && -f /etc/bt_volume/bt_volume_conf.py ]] && \
+	rm /etc/bt_volume/bt_volume_conf.py
+[[ ! -L /etc/bt_volume/bt_volume_conf.py ]] && \
+	ln -s /config/bluetooth/bt_volume/bt_volume_conf.py /etc/bt_volume/bt_volume_conf.py
+
+
 ## permissions ##
 if [ -d /dev/snd ]; then
   chmod 0766 /dev/snd/*
@@ -47,5 +66,6 @@ fi
 
 chmod u+x /etc/bt_powerscan/bt_powerscan.sh
 chmod u+x /etc/bt_multimedia_button/bt_multimedia_button.sh
+chmod u+x /etc/bt_volume/bt_volume.py
 
 chown -R abc:abc /config

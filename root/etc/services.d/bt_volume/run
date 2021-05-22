@@ -7,6 +7,7 @@ until [[ $PS_RET -eq 0 ]]; do
   PS_RET=$?
 done
 
-echo "Start service: bluealsa"
+echo "Start service: bt_volume"
 exec \
-	/usr/bin/bluealsa -p a2dp-source -p hsp-hs -p hsp-ag
+	s6-setuidgid abc /etc/bt_volume/bt_volume.py > /dev/null
+

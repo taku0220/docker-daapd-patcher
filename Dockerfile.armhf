@@ -1,4 +1,4 @@
-FROM lsiobase/alpine:arm32v7-3.11 as buildstage
+FROM ghcr.io/linuxserver/baseimage-alpine:arm32v7-3.13 as buildstage
 ############## build stage ##############
 
 ARG DAAPD_RELEASE
@@ -16,19 +16,20 @@ RUN \
 	automake \
 	avahi-dev \
 	bash \
+	build-base \
 	bsd-compat-headers \
 	confuse-dev \
 	curl \
 	curl-dev \
 	ffmpeg-dev \
-	file \
 	flac-dev \
-	g++ \
-	gcc \
 	gettext-dev \
 	gnutls-dev \
 	gperf \
 	json-c-dev \
+	ladspa \
+	ladspa-dev \
+	mxml-dev \
 	libcurl \
 	libevent-dev \
 	libgcrypt-dev \
@@ -40,19 +41,13 @@ RUN \
 	libunistring-dev \
 	libwebsockets-dev \
 	linux-headers \
-	make \
 	openjdk8-jre-base \
 	protobuf-c-dev \
 	python3 \
 	sqlite-dev \
 	taglib-dev \
 	tar && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/community \
-	ladspa \
-	ladspa-dev \
-	mxml-dev && \
- \
+\
  mkdir -p \
 	/tmp/source/caps \
 	/tmp/source/alsaequal \
@@ -66,8 +61,8 @@ RUN \
  if [ "${ARCHBITS}" = "64" ]; then \
 	ENABLE64BIT="enable"; \
  fi && \
- \
- echo "**** compile and install caps ****" && \
+\
+ echo -e "\n**** compile and install caps ****" && \
  if [ ! -f /tmp/source/caps.tar.bz2 ]; then \
 	curl -o \
 	/tmp/source/caps.tar.bz2 -L \
@@ -80,8 +75,8 @@ RUN \
  python3 configure.py && \
  make && \
  make DESTDIR=/tmp/caps-build install && \
- \
- echo "**** compile and install alsaequal ****" && \
+\
+ echo -e "\n**** compile and install alsaequal ****" && \
  if [ ! -f /tmp/source/alsaequal.tar.bz2 ]; then \
 	curl -o \
 	/tmp/source/alsaequal.tar.bz2 -L \
@@ -93,8 +88,8 @@ RUN \
  find /tmp/source/alsaequal_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
  make && \
  make DESTDIR=/tmp/alsaequal-build install && \
- \
- echo "**** install amixer-webui ****" && \
+\
+ echo -e "\n**** install amixer-webui ****" && \
  if [ ! -f /tmp/source/amixer-webui.tar.gz ]; then \
 	curl -o \
 	/tmp/source/amixer-webui.tar.gz -L \
@@ -105,8 +100,8 @@ RUN \
  cd /tmp/source/amixer-webui && \
  chmod a+x /tmp/source/amixer-webui_install.sh && \
  /tmp/source/amixer-webui_install.sh && \
- \
- echo "**** make antlr wrapper ****" && \
+\
+ echo -e "\n**** make antlr wrapper ****" && \
  echo \
 	"#!/bin/bash" > /tmp/source/antlr3 && \
  echo \
@@ -117,8 +112,8 @@ RUN \
 	/tmp/source/antlr-3.4-complete.jar -L \
 		"https://www.antlr3.org/download/antlr-3.4-complete.jar"; \
  fi && \
- \
- echo "**** compile and install antlr3c ${ARCHBITS}bit ****" && \
+\
+ echo -e "\n**** compile and install antlr3c ${ARCHBITS}bit ****" && \
  if [ ! -f /tmp/source/libantlr3c.tar.gz ]; then \
 	curl -o \
 	/tmp/source/libantlr3c.tar.gz -L \
@@ -142,15 +137,16 @@ RUN \
 	--prefix=/usr && \
  make && \
  make install && \
- \
- echo "**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
+\
+ echo -e "\n**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
  curl -o \
  /tmp/source/forked.tar.gz -L \
 	"https://github.com/ejurgensen/forked-daapd/archive/${DAAPD_RELEASE}.tar.gz" && \
  tar xf /tmp/source/forked.tar.gz -C \
 	/tmp/source/forked-daapd --strip-components=1 && \
  cd /tmp/source/forked-daapd && \
- find /tmp/source/forked-daapd_patch -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ find /tmp/source/forked-daapd_patch -maxdepth 1 -name "*.patch" \
+ 	-exec /bin/sh -c 'patch --verbose -p1 < {}' \; && \
  autoreconf -i -v && \
  ./configure \
 	--build=$CBUILD \
@@ -168,7 +164,7 @@ RUN \
  make DESTDIR=/tmp/daapd-build install && \
  mv /tmp/daapd-build/etc/forked-daapd.conf /tmp/daapd-build/etc/forked-daapd.conf.orig
 ############## runtime stage ##############
-FROM lsiobase/alpine:arm32v7-3.11
+FROM ghcr.io/linuxserver/baseimage-alpine:arm32v7-3.13
 
 # set version label
 ARG BUILD_DATE
@@ -177,18 +173,20 @@ LABEL build_version="docker-daapd-patcher version:- ${VERSION} Build-date:- ${BU
 LABEL maintainer="taku0220"
 
 RUN \
- echo "**** install runtime packages ****" && \
+ echo -e "\n**** install runtime packages ****" && \
  apk add --no-cache \
 	alsa-utils \
 	alsa-plugins \
 	avahi \
-	bluez \
+	bluez-alsa \
 	bluez-btmon \
 	confuse \
 	curl \
 	dbus \
+	eudev \
 	ffmpeg \
 	json-c \
+	ladspa \
 	libcurl \
 	libevent \
 	libgcrypt \
@@ -197,37 +195,36 @@ RUN \
 	libsodium \
 	libunistring \
 	libwebsockets \
+	mxml \
 	protobuf-c \
-	python3 \
+	py3-dbus \
+	py3-gobject3 \
+	py3-pip \
 	sqlite \
 	sqlite-libs && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/testing \
-	--repository http://nl.alpinelinux.org/alpine/edge/community \
-	bluez-alsa \
-	ladspa \
-	mxml && \
- \
- echo "**** configuration changes avahi-daemon ****" && \
+\
+ echo -e "\n**** configuration changes avahi-daemon ****" && \
  sed -i -e "s/^use-ipv6=yes/use-ipv6=no/" /etc/avahi/avahi-daemon.conf && \
- sed -i -e "s/^#deny-interfaces=eth1/deny-interfaces=docker0, lxcbr0/" /etc/avahi/avahi-daemon.conf && \
- \
- echo "**** remove avahi service files ****" && \
+\
+ echo -e "\n**** remove avahi service files ****" && \
  rm /etc/avahi/services/*.service && \
- \
- echo "**** add audio group ****" && \
+\
+ echo -e "\n**** add audio group ****" && \
  usermod -aG audio abc && \
- \
- echo "**** remove default udev rules ****" && \
+\
+ echo -e "\n**** remove default udev rules ****" && \
  find /lib/udev/rules.d -type f -name "*.rules" -exec basename {} \; | \
 	xargs -I{} /bin/ln -s /dev/null /etc/udev/rules.d/{} && \
- \
- echo "**** QNAP dropped the bluetoothd process ****" && \
+\
+ echo -e "\n**** QNAP dropped the bluetoothd process ****" && \
  ln -s bluetoothd /usr/lib/bluetooth/bluetoothd2 && \
- \
- echo "**** install Flask ****" && \
+\
+ echo -e "\n**** install Flask ****" && \
  pip3 install --upgrade pip && \
- pip3 install Flask
+ pip3 install Flask && \
+ pip3 install requests && \
+\
+ echo -e "\n"
 
 # copy buildstage and local files
 COPY --from=buildstage /tmp/daapd-build/ /

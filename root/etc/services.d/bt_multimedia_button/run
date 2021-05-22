@@ -3,7 +3,7 @@
 PS_RET=1
 until [[ $PS_RET -eq 0 ]]; do
     sleep 1s
-  ps | egrep -v grep | grep "/usr/lib/bluetooth/bluetoothd" > /dev/null
+  ps -w ax | egrep -v grep | grep "/usr/lib/bluetooth/bluetoothd" > /dev/null
   PS_RET=$?
 done
 

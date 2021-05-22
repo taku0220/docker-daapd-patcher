@@ -1,0 +1,23 @@
+"""
+# Bluetooth Device address(MAC)
+
+Example:
+bt_config_addrs = ["AA:AA:AA:XX:XX:XX", "BB:BB:BB:YY:YY:YY"]
+
+OR
+bt_config_addrs = [
+    "AA:AA:AA:XX:XX:XX",
+    "BB:BB:BB:YY:YY:YY"
+    ]
+"""
+
+bt_config_addrs = {"AA:AA:AA:XX:XX:XX"}
+
+
+# App config
+volume_center = 2048
+
+volume_step = 5
+
+# log level (INFO, DEBUG)
+log_level="DEBUG"
