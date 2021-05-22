@@ -1,5 +1,6 @@
 #!/usr/bin/with-contenv bash
 
+echo "Start service: dbus-daemon"
 exec \
 	dbus-daemon --system --nofork
 

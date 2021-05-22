@@ -1,4 +1,4 @@
-FROM lsiobase/alpine:3.11 as buildstage
+FROM ghcr.io/linuxserver/baseimage-alpine:3.13 as buildstage
 ############## build stage ##############
 
 ARG DAAPD_RELEASE
@@ -14,15 +14,13 @@ RUN \
 	automake \
 	avahi-dev \
 	bash \
+	build-base \
 	bsd-compat-headers \
 	confuse-dev \
 	curl \
 	curl-dev \
 	ffmpeg-dev \
-	file \
 	flac-dev \
-	g++ \
-	gcc \
 	gettext-dev \
 	gnutls-dev \
 	gperf \
@@ -38,14 +36,13 @@ RUN \
 	libunistring-dev \
 	libwebsockets-dev \
 	make \
+	mxml-dev \
 	openjdk8-jre-base \
 	protobuf-c-dev \
 	sqlite-dev \
 	taglib-dev \
 	tar && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/community \
-	mxml-dev && \
+\
  mkdir -p \
 	/tmp/source/forked-daapd \
 	/tmp/source/libantlr3c && \
@@ -56,7 +53,8 @@ RUN \
  if [ "${ARCHBITS}" = "64" ]; then \
 	ENABLE64BIT="enable"; \
  fi && \
- echo "**** make antlr wrapper ****" && \
+\
+ echo -e "\n**** make antlr wrapper ****" && \
  echo \
 	"#!/bin/bash" > /tmp/source/antlr3 && \
  echo \
@@ -65,7 +63,8 @@ RUN \
  curl -o \
  /tmp/source/antlr-3.4-complete.jar -L \
 	http://www.antlr3.org/download/antlr-3.4-complete.jar && \
- echo "**** compile and install antlr3c ${ARCHBITS}bit ****" && \
+\
+ echo -e "\n**** compile and install antlr3c ${ARCHBITS}bit ****" && \
  curl -o \
  /tmp/source/libantlr3c.tar.gz -L \
 	https://github.com/antlr/website-antlr3/raw/gh-pages/download/C/libantlr3c-3.4.tar.gz && \
@@ -87,14 +86,15 @@ RUN \
 	--prefix=/usr && \
  make && \
  make install && \
- echo "**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
+\
+ echo -e "\n**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
  curl -o \
  /tmp/source/forked.tar.gz -L \
 	"https://github.com/ejurgensen/forked-daapd/archive/${DAAPD_RELEASE}.tar.gz" && \
  tar xf /tmp/source/forked.tar.gz -C \
 	/tmp/source/forked-daapd --strip-components=1 && \
  cd /tmp/source/forked-daapd && \
- find /tmp/source -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch -p1 < {}' \; && \
+ find /tmp/source -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch --verbose -p1 < {}' \; && \
  autoreconf -i -v && \
  ./configure \
 	--build=$CBUILD \
@@ -112,7 +112,7 @@ RUN \
  make DESTDIR=/tmp/daapd-build install && \
  mv /tmp/daapd-build/etc/forked-daapd.conf /tmp/daapd-build/etc/forked-daapd.conf.orig
 ############## runtime stage ##############
-FROM lsiobase/alpine:3.11
+FROM ghcr.io/linuxserver/baseimage-alpine:3.13
 
 # set version label
 ARG BUILD_DATE
@@ -121,7 +121,7 @@ LABEL build_version="docker-daapd-patcher version:- ${VERSION} Build-date:- ${BU
 LABEL maintainer="taku0220"
 
 RUN \
- echo "**** install runtime packages ****" && \
+ echo -e "\n**** install runtime packages ****" && \
  apk add --no-cache \
 	avahi \
 	confuse \
@@ -136,12 +136,15 @@ RUN \
 	libsodium \
 	libunistring \
 	libwebsockets \
+	mxml \
 	protobuf-c \
 	sqlite \
 	sqlite-libs && \
- apk add --no-cache \
-	--repository http://nl.alpinelinux.org/alpine/edge/community \
-	mxml
+\
+ echo -e "\n**** remove avahi service files ****" && \
+ rm /etc/avahi/services/*.service && \
+\
+ echo -e "\n"
 
 # copy buildstage and local files
 COPY --from=buildstage /tmp/daapd-build/ /
