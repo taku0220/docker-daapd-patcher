@@ -1,0 +1,14 @@
+#!/usr/bin/with-contenv bash
+
+PS_RET=1
+until [[ $PS_RET -eq 0 ]]; do
+  sleep 1s
+  ps -w ax | egrep -v grep | grep "avahi-daemon" > /dev/null
+  PS_RET=$?
+done
+sleep 1s
+
+echo "Start service: owntone-server\n"
+exec \
+	s6-setuidgid abc /usr/sbin/owntone -f \
+	-P /owntone-pidfolder/owntone.pid

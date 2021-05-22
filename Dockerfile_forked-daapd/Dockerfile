@@ -1,4 +1,4 @@
-FROM ghcr.io/linuxserver/baseimage-alpine:arm64v8-3.13 as buildstage
+FROM ghcr.io/linuxserver/baseimage-alpine:3.13 as buildstage
 ############## build stage ##############
 
 ARG DAAPD_RELEASE
@@ -44,7 +44,7 @@ RUN \
 	tar && \
 \
  mkdir -p \
-	/tmp/source/owntone \
+	/tmp/source/forked-daapd \
 	/tmp/source/libantlr3c && \
  export PATH="/tmp/source:$PATH" && \
  ARCHBITS=${ARCHBITS:-$(getconf LONG_BIT 2>/dev/null)} && \
@@ -87,18 +87,19 @@ RUN \
  make && \
  make install && \
 \
- echo -e "\n**** compile and install owntone-server ${DAAPD_RELEASE} ****" && \
+ echo -e "\n**** compile and install forked-daapd ${DAAPD_RELEASE} ****" && \
  curl -o \
- /tmp/source/owntone.tar.gz -L \
+ /tmp/source/forked.tar.gz -L \
 	"https://github.com/owntone/owntone-server/archive/${DAAPD_RELEASE}.tar.gz" && \
- tar xf /tmp/source/owntone.tar.gz -C \
-	/tmp/source/owntone --strip-components=1 && \
- cd /tmp/source/owntone && \
+ tar xf /tmp/source/forked.tar.gz -C \
+	/tmp/source/forked-daapd --strip-components=1 && \
+ cd /tmp/source/forked-daapd && \
  find /tmp/source -maxdepth 1 -name "*.patch" -exec /bin/sh -c 'patch --verbose -p1 < {}' \; && \
  autoreconf -i -v && \
  ./configure \
 	--build=$CBUILD \
 	--enable-chromecast \
+	--enable-itunes \
 	--enable-lastfm \
 	--enable-mpd \
 	--host=$CHOST \
@@ -108,10 +109,10 @@ RUN \
 	--prefix=/usr \
 	--sysconfdir=/etc && \
  make && \
- make DESTDIR=/tmp/owntone-build install && \
- mv /tmp/owntone-build/etc/owntone.conf /tmp/owntone-build/etc/owntone.conf.orig
+ make DESTDIR=/tmp/daapd-build install && \
+ mv /tmp/daapd-build/etc/forked-daapd.conf /tmp/daapd-build/etc/forked-daapd.conf.orig
 ############## runtime stage ##############
-FROM ghcr.io/linuxserver/baseimage-alpine:arm64v8-3.13
+FROM ghcr.io/linuxserver/baseimage-alpine:3.13
 
 # set version label
 ARG BUILD_DATE
@@ -146,9 +147,9 @@ RUN \
  echo -e "\n"
 
 # copy buildstage and local files
-COPY --from=buildstage /tmp/owntone-build/ /
+COPY --from=buildstage /tmp/daapd-build/ /
 COPY --from=buildstage /usr/lib/libantlr3c.so /usr/lib/libantlr3c.so
-COPY root/ /
+COPY root_forked-daapd/ /
 
 # ports and volumes
 EXPOSE 3689
