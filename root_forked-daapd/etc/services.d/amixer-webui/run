@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bash
+
+sleep 3s
+
+echo "Start service: amixer-webui"
+exec \
+	s6-setuidgid abc /usr/share/amixer-webui/alsamixer_webui.py > /dev/null

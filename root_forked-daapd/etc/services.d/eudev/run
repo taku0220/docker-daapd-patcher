@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv bash
+
+echo "Start service: eudev"
+exec \
+	/sbin/udevd

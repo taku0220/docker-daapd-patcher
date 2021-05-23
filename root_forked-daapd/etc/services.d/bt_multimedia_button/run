@@ -1,0 +1,12 @@
+#!/usr/bin/with-contenv bash
+
+PS_RET=1
+until [[ $PS_RET -eq 0 ]]; do
+    sleep 1s
+  ps -w ax | egrep -v grep | grep "/usr/lib/bluetooth/bluetoothd" > /dev/null
+  PS_RET=$?
+done
+
+echo "Start service: bt_multimedia_button"
+exec \
+	/etc/bt_multimedia_button/bt_multimedia_button.sh

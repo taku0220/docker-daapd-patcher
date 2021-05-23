@@ -1,0 +1,9 @@
+#!/usr/bin/with-contenv bash
+
+until [[ -e /var/run/dbus/system_bus_socket ]]; do
+  sleep 1s
+done
+
+echo "Start service: bluetoothd"
+exec \
+	/usr/lib/bluetooth/bluetoothd2 --plugin=a2dp,avrcp,autopair,scanparam,deviceinfo,battery --compat

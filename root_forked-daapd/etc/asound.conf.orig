@@ -1,0 +1,51 @@
+defaults.bluealsa.service "org.bluealsa"
+defaults.bluealsa.interface "hci0"
+#defaults.bluealsa.device "XX:XX:XX:XX:XX:XX"
+defaults.bluealsa.profile "a2dp"
+defaults.bluealsa.delay 10000
+
+pcm.btspeaker {
+    type plug;
+    slave.pcm {
+      type bluealsa;
+      service org.bluealsa;
+      #device "XX:XX:XX:XX:XX:XX";
+      profile "a2dp";
+    }
+}
+
+pcm.usb-dac {
+    type plug;
+    slave.pcm {
+      type hw;
+      card 0;
+    }
+}
+
+ctl.usb-dac {
+    type hw;
+    card 0;
+}
+
+pcm.plugequal {
+    type equal;
+    # for Bluetooth speaker
+      slave.pcm "btspeaker";
+      controls "/config/alsa/alsaequal/alsaequal_btspeaker.bin";
+    # for USB-DAC
+      #slave.pcm usb-dac;
+      #controls "/config/alsa/alsaequal/alsaequal_usbdac.bin";
+}
+
+ctl.equal {
+    type equal;
+    # for Bluetooth speaker
+      controls "/config/alsa/alsaequal/alsaequal_btspeaker.bin";
+    # for USB-DAC
+      #controls "/config/alsa/alsaequal/alsaequal_usbdac.bin";
+}
+
+pcm.equal {
+    type plug;
+    slave.pcm plugequal;
+}
